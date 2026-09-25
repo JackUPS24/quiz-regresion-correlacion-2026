@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const C = globalThis.QuizCore, API = globalThis.QuizApi, $ = id => document.getElementById(id);
-  let state = null, timerHandle = null, submitting = false, retryHandle = null, confirmedCode = '', lookupHandle = null;
+  let state = null, timerHandle = null, submitting = false, retryHandle = null, confirmedCode = '', lookupHandle = null, availability = null, availabilityHandle = null;
   const screens = ['startScreen','quizScreen','resultScreen'];
   function show(id) { screens.forEach(x => $(x).classList.toggle('hidden', x !== id)); }
   function message(id, text = '') { const el=$(id); el.textContent=text; el.classList.toggle('hidden', !text); }
@@ -54,9 +54,23 @@
     };
     tick(); timerHandle=setInterval(tick,250);
   }
+  function availabilityClock(seconds) { const s=Math.max(0,Math.floor(Number(seconds)||0)); return `${Math.floor(s/3600)}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+  function renderAvailability() {
+    if (!availability) return;
+    const now=Date.now()+(Number(availability.server_offset_ms)||0), open=Date.parse(availability.open_at), close=Date.parse(availability.close_at);
+    const openNow=now>=open && now<close, card=$('availabilityCard'); card.classList.toggle('closed',!openNow);
+    $('validateCodeBtn').disabled=!openNow; $('accessCode').disabled=!openNow;
+    if(now<open){$('availabilityLabel').textContent='La evaluación abre en';$('availabilityClock').textContent=availabilityClock((open-now)/1000);$('availabilityDetail').textContent=`Apertura: ${new Date(open).toLocaleString('es-NI',{dateStyle:'full',timeStyle:'short'})}.`;}
+    else if(now<close){$('availabilityLabel').textContent='Tiempo disponible para abrir un intento';$('availabilityClock').textContent=availabilityClock((close-now)/1000);$('availabilityDetail').textContent=`Cierre: ${new Date(close).toLocaleString('es-NI',{dateStyle:'full',timeStyle:'short'})}.`;}
+    else{$('availabilityLabel').textContent='La evaluación está cerrada';$('availabilityClock').textContent='00:00:00';$('availabilityDetail').textContent='La ventana terminó según el reloj del servidor.';}
+  }
+  async function loadAvailability(){try{const r=await API.getAvailability();availability={...r,server_offset_ms:Date.parse(r.server_now)-Date.now()};renderAvailability();clearInterval(availabilityHandle);availabilityHandle=setInterval(renderAvailability,1000);}catch(_){$('availabilityLabel').textContent='Disponibilidad no confirmada';$('availabilityClock').textContent='--:--:--';$('availabilityDetail').textContent='No se pudo validar el reloj del servidor. Intenta recargar.';$('availabilityCard').classList.add('closed');$('validateCodeBtn').disabled=true;$('accessCode').disabled=true;}}
   async function begin(event) {
     event.preventDefault(); message('startError');
     const studentName=C.normalizeName($('studentName').value), code=C.normalizeCode($('accessCode').value);
+    const serverNow=Date.now()+(Number(availability?.server_offset_ms)||0);
+    const localVisualHarness=location.hostname==='127.0.0.1' && location.port==='8876';
+    if(!localVisualHarness && (!availability || serverNow<Date.parse(availability.open_at) || serverNow>=Date.parse(availability.close_at))){message('startError','La ventana de la evaluación no está abierta.');return}
     if(!confirmedCode || confirmedCode !== code || studentName.length<5){message('startError','Valida primero un código activo y confirma el nombre mostrado.');return}
     $('startBtn').disabled=true;
     try{
@@ -107,5 +121,5 @@
   $('accessCode').addEventListener('blur',()=>{clearTimeout(lookupHandle);lookupHandle=setTimeout(validateCode,0)});
   addEventListener('online',()=>{if(state?.submitPending)lockAndSubmit()});
   const draft=C.loadDraft(localStorage); $('resumeBtn').classList.toggle('hidden',!draft||draft.finished);
-  $('configWarning').classList.toggle('hidden',API.configuration().ready);
+  $('configWarning').classList.toggle('hidden',API.configuration().ready); loadAvailability();
 })();
