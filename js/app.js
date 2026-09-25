@@ -53,7 +53,7 @@
   }
   function renderResumeCode() {
     const el=$('resumeCodeNotice'); if (!el || !state?.resumeCode) return;
-    el.innerHTML=`<strong>Código individual de reanudación:</strong> <code id="resumeCodeValue">${escapeHtml(state.resumeCode || 'NO DISPONIBLE')}</code><button id="copyResumeCode" type="button" class="btn secondary small">Copiar código</button><br><span class="small">Guárdalo: junto con tu carné y nombre confirmado permite continuar este intento desde otro navegador.</span>`;
+    el.innerHTML=`<strong>Código de reanudación:</strong> <code id="resumeCodeValue">${escapeHtml(state.resumeCode || 'NO DISPONIBLE')}</code><button id="copyResumeCode" type="button" class="btn secondary small">Copiar código</button><br><span class="small">Guárdalo: es el único dato necesario para continuar este intento desde otro navegador.</span>`;
     el.classList.remove('hidden');
     const copy=$('copyResumeCode'); if(copy) copy.onclick=async()=>{try{await navigator.clipboard.writeText(state.resumeCode);copy.textContent='Copiado';}catch(_){copy.textContent='Copia el código manualmente';}};
   }
@@ -77,11 +77,10 @@
     try{const response=await API.rpc('begin_quiz_attempt',{p_code:code,p_student_name:studentName});state=C.createDraft(response);save();show('quizScreen');renderResumeCode();render();startTimer();}catch(error){message('startError',errorText(error))}finally{$('startBtn').disabled=false}
   }
   async function resumeRemote() {
-    message('startError'); const code=C.normalizeCode($('accessCode').value), name=C.normalizeName($('studentName').value), resumeCode=String($('resumeCode').value||'').toUpperCase().replace(/[^A-F0-9]/g,'');
-    if(!confirmedCode || confirmedCode!==code || name.length<5){message('startError','Valida primero el carné para confirmar el nombre.');return}
-    if(resumeCode.length!==24){message('startError','El código individual debe tener 24 caracteres.');return}
+    message('startError'); const resumeCode=String($('resumeCode').value||'').toUpperCase().replace(/[^A-F0-9]/g,'');
+    if(resumeCode.length!==12){message('startError','El código de reanudación debe tener 12 caracteres.');return}
     $('resumeRemoteBtn').disabled=true;
-    try{const response=await API.resumeQuizAttempt(code,name,resumeCode);response.resume_code=resumeCode;state=C.createDraft(response);save();show('quizScreen');renderResumeCode();render();startTimer();}catch(error){message('startError',errorText(error))}finally{$('resumeRemoteBtn').disabled=false}
+    try{const response=await API.resumeQuizAttempt(resumeCode);response.resume_code=resumeCode;state=C.createDraft(response);save();show('quizScreen');renderResumeCode();render();startTimer();}catch(error){message('startError',errorText(error))}finally{$('resumeRemoteBtn').disabled=false}
   }
   function resume() { state=C.loadDraft(localStorage);if(!state)return;if(state.finished){showResult(state.result);return}show('quizScreen');renderResumeCode();render();startTimer();if(state.submitPending)lockAndSubmit(); }
   async function lockAndSubmit() {
