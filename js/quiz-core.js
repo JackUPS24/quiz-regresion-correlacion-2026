@@ -9,6 +9,7 @@
   function remainingSeconds(deadlineIso, nowMs = Date.now()) { return Math.max(0, Math.ceil((new Date(deadlineIso).getTime() - nowMs) / 1000)); }
   function formatClock(seconds) { const safe = Math.max(0, Number(seconds) || 0); return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, '0')}`; }
   function isAnswered(value) { return Array.isArray(value) ? value.length > 0 : value !== null && value !== undefined && value !== ''; }
+  function clampIndex(value, total) { const last = Math.max(0, Number(total) - 1); const index = Number(value); return Number.isInteger(index) ? Math.max(0, Math.min(index, last)) : 0; }
   function canonicalAnswer(value) { return Array.isArray(value) ? [...value].map(Number).sort((a,b) => a-b) : value; }
   function answersEqual(question, response) { if (question.type === 'numeric') { if (!isAnswered(response)) return false; const number = Number(String(response).replace(',', '.')); return Number.isFinite(number) && Math.abs(number - Number(question.answer)) <= Number(question.tolerance || 0); } if (question.type === 'multi') return JSON.stringify(canonicalAnswer(response || [])) === JSON.stringify(canonicalAnswer(question.answer || [])); return Number(response) === Number(question.answer); }
   function scoreAttempt(questions, responses) { const detail = questions.map(q => ({ id: q.id, topic: q.topic, correct: answersEqual(q, responses[q.id]) })); const points = questions.length ? 100 / questions.length : 0; return { score: Math.round(detail.filter(x => x.correct).length * points * 100) / 100, detail }; }
@@ -17,5 +18,5 @@
   function loadDraft(storage) { try { const value = JSON.parse(storage.getItem(STORE_KEY)); return value && value.schema === 2 && value.attemptToken ? value : null; } catch (_) { return null; } }
   function clearDraft(storage) { storage.removeItem(STORE_KEY); }
   function csvCell(value) { const text = value == null ? '' : typeof value === 'string' ? value : JSON.stringify(value); return `"${text.replaceAll('"', '""')}"`; }
-  return { STORE_KEY, normalizeName, normalizeCode, remainingSeconds, formatClock, isAnswered, answersEqual, scoreAttempt, createDraft, saveDraft, loadDraft, clearDraft, csvCell };
+  return { STORE_KEY, normalizeName, normalizeCode, remainingSeconds, formatClock, isAnswered, clampIndex, answersEqual, scoreAttempt, createDraft, saveDraft, loadDraft, clearDraft, csvCell };
 });

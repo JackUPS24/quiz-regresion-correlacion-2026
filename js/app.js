@@ -1,5 +1,7 @@
 (function () {
   'use strict';
+  if (globalThis.__quizAppInitialized) return;
+  globalThis.__quizAppInitialized = true;
   const C = globalThis.QuizCore, API = globalThis.QuizApi, $ = id => document.getElementById(id);
   let state = null, timerHandle = null, submitting = false, retryHandle = null, confirmedCode = '', lookupHandle = null, availability = null, availabilityHandle = null;
   const screens = ['startScreen','quizScreen','resultScreen'];
@@ -18,13 +20,20 @@
     return error?.message || 'Ocurrió un error inesperado.';
   }
   function save() { if (!state) return; C.saveDraft(localStorage, state); $('saveStatus').textContent=`Guardado local: ${new Date().toLocaleTimeString('es-NI')}`; }
-  function capture() {
+  function capture(persist = true) {
     if (!state || state.finished) return;
-    const q=state.questions[state.index];
+    const q=state.questions[C.clampIndex(state.index,state.questions.length)];
     if (q.type==='numeric') state.responses[q.id]=$('numericAnswer')?.value ?? '';
     else if (q.type==='multi') state.responses[q.id]=[...document.querySelectorAll('input[name=answer]:checked')].map(x=>Number(x.value));
     else { const selected=document.querySelector('input[name=answer]:checked'); state.responses[q.id]=selected?Number(selected.value):null; }
+    if (persist) save();
+  }
+  function navigateTo(nextIndex) {
+    if (!state || state.finished) return;
+    capture(false);
+    state.index=C.clampIndex(nextIndex,state.questions.length);
     save();
+    render();
   }
   function answerInput(q) {
     const current=state.responses[q.id];
@@ -34,8 +43,7 @@
   }
   function render() {
     const total=state.questions.length;
-    const index=Math.max(0,Math.min(Number(state.index)||0,total-1));
-    state.index=index;
+    const index=C.clampIndex(state.index,total);
     const q=state.questions[index];
     const questionNumber=index+1;
     $('counter').textContent=`Pregunta ${questionNumber} de ${total}`;
@@ -47,16 +55,13 @@
     if (graphQuestion) bindGraph(graphQuestion);
     $('questionArea').querySelectorAll('input').forEach(el=>el.addEventListener('input', capture));
     $('questionNav').innerHTML=state.questions.map((item,i)=>`<button type="button" class="dot ${i===index?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}${i===index?' (actual)':''}" aria-current="${i===index?'step':'false'}">${i+1}</button>`).join('');
-    $('questionNav').querySelectorAll('button').forEach(b=>b.onclick=()=>{capture();state.index=Number(b.dataset.index);save();render()});
     $('prevBtn').disabled=index===0; $('nextBtn').classList.toggle('hidden',index===total-1); $('finishBtn').classList.toggle('hidden',index!==total-1); $('questionArea').setAttribute('data-question-index',String(index));
-    // Reconciliación final: todos los indicadores se leen del mismo índice ya pintado.
-    const syncChrome=()=>{const painted=Number($('questionArea').getAttribute('data-question-index'));if(!Number.isInteger(painted))return;const n=painted+1;$('counter').textContent=`Pregunta ${n} de ${total}`;$('counter').setAttribute('aria-label',`Pregunta ${n} de ${total}`);$('progressBar').style.width=`${Math.round((n/total)*100)}%`;$('progressBar').setAttribute('aria-valuenow',String(n));$('questionNav').querySelectorAll('.dot').forEach((dot,i)=>{const active=i===painted;dot.classList.toggle('current',active);dot.setAttribute('aria-current',active?'step':'false');dot.setAttribute('aria-label',`Pregunta ${i+1}${active?' (actual)':''}`);});};
-    syncChrome();
     window.scrollTo({top:0,behavior:'smooth'});
   }
   function graphHTML(q){
-    const points=(q.graph.points||[]).map(([x,y])=>`<circle cx="${45+x*65}" cy="${260-y*30}" r="7" fill="#0b8f70" stroke="#fff" stroke-width="2"><title>x=${x}, y=${y}</title></circle>`).join('');
-    return `<div class="svgbox quiz-graph"><svg viewBox="0 0 520 300" role="img" aria-label="Diagrama de dispersión interactivo"><g stroke="#d7deea" stroke-width="1">${[50,100,150,200,250].map(y=>`<line x1="45" y1="${y}" x2="500" y2="${y}"/>`).join('')}${[100,170,240,310,380,450].map(x=>`<line x1="${x}" y1="20" x2="${x}" y2="260"/>`).join('')}</g><g stroke="#26364d" stroke-width="2"><line x1="45" y1="260" x2="500" y2="260"/><line x1="45" y1="20" x2="45" y2="260"/></g><text x="485" y="285" fill="#26364d">X</text><text x="18" y="30" fill="#26364d">Y</text><line id="fitLine" stroke="#155eef" stroke-width="4"/>${points}</svg><div class="controls"><label for="slope">Pendiente</label><input id="slope" type="range" min="-2" max="2" step="0.1" value="${q.defaultSlope ?? 0.9}"><output id="slopeOut"></output><label for="intercept">Intercepto</label><input id="intercept" type="range" min="0" max="10" step="0.2" value="${q.defaultIntercept ?? 1}"><output id="interceptOut"></output></div><p class="hint">Mueve los controles para explorar la recta. Esto no cambia tu respuesta.</p></div>`;
+    const graph=q?.graph || q || {};
+    const points=(Array.isArray(graph.points)?graph.points:[]).map(([x,y])=>`<circle cx="${45+x*65}" cy="${260-y*30}" r="7" fill="#0b8f70" stroke="#fff" stroke-width="2"><title>x=${x}, y=${y}</title></circle>`).join('');
+    return `<div class="svgbox quiz-graph"><svg viewBox="0 0 520 300" role="img" aria-label="Diagrama de dispersión interactivo"><g stroke="#d7deea" stroke-width="1">${[50,100,150,200,250].map(y=>`<line x1="45" y1="${y}" x2="500" y2="${y}"/>`).join('')}${[100,170,240,310,380,450].map(x=>`<line x1="${x}" y1="20" x2="${x}" y2="260"/>`).join('')}</g><g stroke="#26364d" stroke-width="2"><line x1="45" y1="260" x2="500" y2="260"/><line x1="45" y1="20" x2="45" y2="260"/></g><text x="485" y="285" fill="#26364d">X</text><text x="18" y="30" fill="#26364d">Y</text><line id="fitLine" stroke="#155eef" stroke-width="4"/>${points}</svg><div class="controls"><label for="slope">Pendiente</label><input id="slope" type="range" min="-2" max="2" step="0.1" value="${graph.defaultSlope ?? 0.9}"><output id="slopeOut"></output><label for="intercept">Intercepto</label><input id="intercept" type="range" min="0" max="10" step="0.2" value="${graph.defaultIntercept ?? 1}"><output id="interceptOut"></output></div><p class="hint">Mueve los controles para explorar la recta. Esto no cambia tu respuesta.</p></div>`;
   }
   function bindGraph(q){
     const draw=()=>{const m=Number($('slope').value),b=Number($('intercept').value),y1=260-b*30,y2=260-(b+m*7)*30;$('fitLine').setAttribute('x1','45');$('fitLine').setAttribute('y1',y1);$('fitLine').setAttribute('x2','500');$('fitLine').setAttribute('y2',y2);$('slopeOut').value=m.toFixed(1);$('interceptOut').value=b.toFixed(1)};
@@ -101,7 +106,8 @@
   function showResult(result) { show('resultScreen');const topics=result.topic_breakdown||[];$('resultArea').innerHTML=`<p class="muted">${escapeHtml(result.student_name||state.studentName)} · intento ${result.attempt_no||state.attemptNo}</p><div class="score">${Number(result.score).toFixed(0)}/100</div><p><span class="status ${escapeHtml(result.status)}">${result.status==='timed_out'?'Finalizado por tiempo':'Envío completo'}</span> · ${result.correct_count}/${result.question_count} correctas · duración ${Math.floor(result.duration_seconds/60)} min ${result.duration_seconds%60} s</p><p>Código de verificación: <strong>${escapeHtml(result.verification_code)}</strong></p><h3>Desglose por tema</h3>${topics.map(t=>`<div class="topic"><span>${escapeHtml(t.topic)}</span><div class="bar"><span style="width:${t.total?Math.round(t.correct/t.total*100):0}%"></span></div><strong>${t.correct}/${t.total}</strong></div>`).join('')}<p class="success">El registro central fue confirmado. El panel docente puede verificarlo con el código mostrado.</p>`; }
   function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
   $('startForm').addEventListener('submit',begin);$('resumeBtn').onclick=resume;$('resumeRemoteBtn').onclick=resumeRemote;
-  $('prevBtn').onclick=()=>{capture();if(state.index>0){state.index--;save();render()}};$('nextBtn').onclick=()=>{capture();if(state.index<state.questions.length-1){state.index++;save();render()}};$('finishBtn').onclick=()=>{capture();const missing=state.questions.filter(q=>!C.isAnswered(state.responses[q.id])).length;if(!missing||confirm(`Hay ${missing} pregunta(s) sin responder. ¿Finalizar y enviar?`))lockAndSubmit()};$('newAttemptBtn').onclick=()=>{C.clearDraft(localStorage);state=null;location.reload()};
+  $('questionNav').addEventListener('click',event=>{const button=event.target.closest('button[data-index]');if(button&&$('questionNav').contains(button))navigateTo(Number(button.dataset.index))});
+  $('prevBtn').onclick=()=>navigateTo((state?.index??0)-1);$('nextBtn').onclick=()=>navigateTo((state?.index??0)+1);$('finishBtn').onclick=()=>{capture();const missing=state.questions.filter(q=>!C.isAnswered(state.responses[q.id])).length;if(!missing||confirm(`Hay ${missing} pregunta(s) sin responder. ¿Finalizar y enviar?`))lockAndSubmit()};$('newAttemptBtn').onclick=()=>{C.clearDraft(localStorage);state=null;location.reload()};
   async function validateCode(){const input=$('accessCode'),code=C.normalizeCode(input.value);input.value=code;confirmedCode='';$('studentName').value='';$('startBtn').disabled=true;if(code.length<8){$('identityStatus').textContent='Escribe un código completo para validarlo.';return}$('identityStatus').textContent='Validando código...';message('startError');try{const result=await API.lookupStudent(code);const name=C.normalizeName(result?.student_name);if(!name)throw new Error('invalid_code');$('studentName').value=name;confirmedCode=code;$('identityStatus').textContent='Nombre confirmado. Ya puedes comenzar o reanudar.';}catch(error){$('identityStatus').textContent='Código inválido, inactivo o no disponible.';message('startError',errorText(error));}finally{$('startBtn').disabled=!confirmedCode}}
   $('validateCodeBtn').onclick=validateCode;$('accessCode').addEventListener('input',e=>{const pos=e.target.selectionStart;e.target.value=C.normalizeCode(e.target.value);confirmedCode='';$('studentName').value='';$('startBtn').disabled=true;$('identityStatus').textContent='Valida el código para mostrar el nombre.';try{e.target.setSelectionRange(pos,pos)}catch(_){}});$('accessCode').addEventListener('blur',()=>{clearTimeout(lookupHandle);lookupHandle=setTimeout(validateCode,0)});addEventListener('online',()=>{if(state?.submitPending)lockAndSubmit()});
   const draft=C.loadDraft(localStorage);$('resumeBtn').classList.toggle('hidden',!draft||draft.finished);$('configWarning').classList.toggle('hidden',API.configuration().ready);loadAvailability();
