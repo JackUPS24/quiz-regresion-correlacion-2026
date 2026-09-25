@@ -78,7 +78,7 @@
   }
   async function resumeRemote() {
     message('startError'); const resumeCode=String($('resumeCode').value||'').toUpperCase().replace(/[^A-F0-9]/g,'');
-    if(resumeCode.length!==12){message('startError','El código de reanudación debe tener 12 caracteres.');return}
+    if(resumeCode.length!==12 && resumeCode.length!==24){message('startError','El código de reanudación debe tener 12 caracteres. Los códigos antiguos de 24 también siguen siendo válidos.');return}
     $('resumeRemoteBtn').disabled=true;
     try{const response=await API.resumeQuizAttempt(resumeCode);response.resume_code=resumeCode;state=C.createDraft(response);save();show('quizScreen');renderResumeCode();render();startTimer();}catch(error){message('startError',errorText(error))}finally{$('resumeRemoteBtn').disabled=false}
   }
