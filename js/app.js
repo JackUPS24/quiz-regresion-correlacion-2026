@@ -35,8 +35,9 @@
   function render() {
     const q=state.questions[state.index], total=state.questions.length;
     $('counter').textContent=`Pregunta ${state.index+1} de ${total}`; $('progressBar').style.width=`${Math.round((state.index/total)*100)}%`;
-    $('questionArea').innerHTML=`<div class="meta"><span class="pill">${escapeHtml(q.topic)}</span><span class="pill">${escapeHtml(q.type_label || q.type)}</span><span class="pill">5 puntos</span></div><p class="stem">${escapeHtml(q.stem)}</p>${q.graph ? graphHTML(q) : ''}${answerInput(q)}`;
-    if (q.graph) bindGraph(q);
+    const graphQuestion = q.graph || (/diagrama|dispersión|dispersion/i.test(q.stem || '') ? {points:[[1,2],[2,3],[3,3],[4,5],[5,6],[6,7]],defaultSlope:0.9,defaultIntercept:1} : null);
+    $('questionArea').innerHTML=`<div class="meta"><span class="pill">${escapeHtml(q.topic)}</span><span class="pill">${escapeHtml(q.type_label || q.type)}</span><span class="pill">5 puntos</span></div><p class="stem">${escapeHtml(q.stem)}</p>${graphQuestion ? graphHTML(graphQuestion) : ''}${answerInput(q)}`;
+    if (graphQuestion) bindGraph(graphQuestion);
     $('questionArea').querySelectorAll('input').forEach(el=>el.addEventListener('input', capture));
     $('questionNav').innerHTML=state.questions.map((item,i)=>`<button class="dot ${i===state.index?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}">${i+1}</button>`).join('');
     $('questionNav').querySelectorAll('button').forEach(b=>b.onclick=()=>{capture();state.index=Number(b.dataset.index);save();render()});
@@ -44,7 +45,7 @@
   }
   function graphHTML(q){
     const points=(q.graph.points||[]).map(([x,y])=>`<circle cx="${45+x*65}" cy="${260-y*30}" r="7" fill="#0b8f70" stroke="#fff" stroke-width="2"><title>x=${x}, y=${y}</title></circle>`).join('');
-    return `<div class="svgbox quiz-graph"><svg viewBox="0 0 520 300" role="img" aria-label="Diagrama de dispersión interactivo"><g stroke="#d7deea" stroke-width="1">${[50,100,150,200,250].map(y=>`<line x1="45" y1="${y}" x2="500" y2="${y}"/>`).join('')}${[100,170,240,310,380,450].map(x=>`<line x1="${x}" y1="20" x2="${x}" y2="260"/>`).join('')}</g><g stroke="#26364d" stroke-width="2"><line x1="45" y1="260" x2="500" y2="260"/><line x1="45" y1="20" x2="45" y2="260"/></g><text x="485" y="285" fill="#26364d">X</text><text x="18" y="30" fill="#26364d">Y</text><line id="fitLine" stroke="#155eef" stroke-width="4"/>${points}</svg><div class="controls"><label for="slope">Pendiente</label><input id="slope" type="range" min="-2" max="2" step="0.1" value="${q.graph.defaultSlope ?? 0.9}"><output id="slopeOut"></output><label for="intercept">Intercepto</label><input id="intercept" type="range" min="0" max="10" step="0.2" value="${q.graph.defaultIntercept ?? 1}"><output id="interceptOut"></output></div><p class="hint">Mueve los controles para explorar la recta. Esto no cambia tu respuesta.</p></div>`;
+    return `<div class="svgbox quiz-graph"><svg viewBox="0 0 520 300" role="img" aria-label="Diagrama de dispersión interactivo"><g stroke="#d7deea" stroke-width="1">${[50,100,150,200,250].map(y=>`<line x1="45" y1="${y}" x2="500" y2="${y}"/>`).join('')}${[100,170,240,310,380,450].map(x=>`<line x1="${x}" y1="20" x2="${x}" y2="260"/>`).join('')}</g><g stroke="#26364d" stroke-width="2"><line x1="45" y1="260" x2="500" y2="260"/><line x1="45" y1="20" x2="45" y2="260"/></g><text x="485" y="285" fill="#26364d">X</text><text x="18" y="30" fill="#26364d">Y</text><line id="fitLine" stroke="#155eef" stroke-width="4"/>${points}</svg><div class="controls"><label for="slope">Pendiente</label><input id="slope" type="range" min="-2" max="2" step="0.1" value="${q.defaultSlope ?? 0.9}"><output id="slopeOut"></output><label for="intercept">Intercepto</label><input id="intercept" type="range" min="0" max="10" step="0.2" value="${q.defaultIntercept ?? 1}"><output id="interceptOut"></output></div><p class="hint">Mueve los controles para explorar la recta. Esto no cambia tu respuesta.</p></div>`;
   }
   function bindGraph(q){
     const draw=()=>{const m=Number($('slope').value),b=Number($('intercept').value),y1=260-b*30,y2=260-(b+m*7)*30;$('fitLine').setAttribute('x1','45');$('fitLine').setAttribute('y1',y1);$('fitLine').setAttribute('x2','500');$('fitLine').setAttribute('y2',y2);$('slopeOut').value=m.toFixed(1);$('interceptOut').value=b.toFixed(1)};
@@ -52,8 +53,9 @@
   }
   function renderResumeCode() {
     const el=$('resumeCodeNotice'); if (!el || !state?.resumeCode) return;
-    el.innerHTML=`<strong>Código individual de reanudación:</strong> <code>${escapeHtml(state.resumeCode)}</code><br><span class="small">Guárdalo: junto con tu carné y nombre confirmado permite continuar este intento desde otro navegador.</span>`;
+    el.innerHTML=`<strong>Código individual de reanudación:</strong> <code id="resumeCodeValue">${escapeHtml(state.resumeCode || 'NO DISPONIBLE')}</code><button id="copyResumeCode" type="button" class="btn secondary small">Copiar código</button><br><span class="small">Guárdalo: junto con tu carné y nombre confirmado permite continuar este intento desde otro navegador.</span>`;
     el.classList.remove('hidden');
+    const copy=$('copyResumeCode'); if(copy) copy.onclick=async()=>{try{await navigator.clipboard.writeText(state.resumeCode);copy.textContent='Copiado';}catch(_){copy.textContent='Copia el código manualmente';}};
   }
   function startTimer() {
     clearInterval(timerHandle); const tick=()=>{const seconds=C.remainingSeconds(state.deadlineAt,Date.now()+(state.serverOffsetMs||0));$('timer').textContent=C.formatClock(seconds);$('timer').classList.toggle('urgent',seconds<=300);if(seconds<=0){clearInterval(timerHandle);lockAndSubmit();}}; tick(); timerHandle=setInterval(tick,250);
