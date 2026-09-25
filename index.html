@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light"><meta name="robots" content="noindex,nofollow">
+  <title>Quiz · Regresión y correlación</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<noscript><div class="noscript">La evaluación necesita JavaScript habilitado y conexión a internet.</div></noscript>
+<main class="shell">
+  <header class="brand"><div class="brand-mark" aria-hidden="true">R²</div><div><p class="eyebrow">Evaluación universitaria · V02</p><h1>Regresión y correlación</h1></div></header>
+
+  <section id="startScreen" class="card hero" aria-labelledby="startTitle">
+    <div><p class="eyebrow">Intento controlado</p><h2 id="startTitle">Demuestra lo que aprendiste.</h2><p class="muted">Al comenzar se activa una cuenta regresiva obligatoria de 60 minutos. Al llegar a cero, el sistema bloquea la edición y envía automáticamente.</p>
+      <div class="facts"><div class="fact"><strong>60:00</strong>tiempo máximo</div><div class="fact"><strong>20</strong>preguntas</div><div class="fact"><strong>100</strong>puntos</div><div class="fact"><strong>3</strong>intentos por código</div></div>
+    </div>
+    <form id="startForm" class="form-grid" novalidate>
+      <div><label for="studentName">Nombre completo</label><input id="studentName" autocomplete="name" maxlength="120" required placeholder="Nombres y apellidos"></div>
+      <div><label for="accessCode">Código individual</label><input id="accessCode" autocomplete="one-time-code" autocapitalize="characters" maxlength="24" required placeholder="R26-XXXX-XXXX-XXXX"></div>
+      <p class="notice small">El código se vincula al nombre usado en el primer intento. Usa el mismo nombre en los intentos posteriores.</p>
+      <div id="configWarning" class="error hidden" role="alert">V02 aún no está conectada a Supabase. Consulta la guía de despliegue.</div>
+      <div id="startError" class="error hidden" role="alert"></div>
+      <div class="actions"><button id="startBtn" class="btn" type="submit">Comenzar intento</button><button id="resumeBtn" class="btn secondary hidden" type="button">Reanudar intento local</button></div>
+    </form>
+  </section>
+
+  <section id="quizScreen" class="hidden" aria-live="polite">
+    <div class="quizbar no-print"><span id="counter" class="pill">Pregunta 1 de 20</span><div class="progress" aria-label="Progreso"><span id="progressBar"></span></div><span id="timer" class="pill timer" aria-live="off">60:00</span></div>
+    <article class="card"><div id="questionArea"></div><div id="questionNav" class="question-nav" aria-label="Navegación de preguntas"></div><div class="actions"><button id="prevBtn" class="btn secondary">Anterior</button><button id="nextBtn" class="btn">Siguiente</button><button id="finishBtn" class="btn hidden">Finalizar y enviar</button></div><p id="saveStatus" class="muted small" aria-live="polite"></p><div id="submitError" class="error hidden" role="alert"></div></article>
+  </section>
+
+  <section id="resultScreen" class="card hidden" aria-labelledby="resultTitle"><p class="eyebrow">Registro confirmado</p><h2 id="resultTitle">Resultado del intento</h2><div id="resultArea"></div><div class="actions no-print"><button class="btn" onclick="window.print()">Imprimir</button><button id="newAttemptBtn" class="btn secondary">Usar otro intento</button></div></section>
+</main>
+<script src="js/config.js"></script><script src="js/quiz-core.js"></script><script src="js/supabase-api.js"></script><script src="js/app.js"></script>
+</body></html>
