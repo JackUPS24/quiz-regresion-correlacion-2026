@@ -48,7 +48,11 @@
     $('questionArea').querySelectorAll('input').forEach(el=>el.addEventListener('input', capture));
     $('questionNav').innerHTML=state.questions.map((item,i)=>`<button type="button" class="dot ${i===index?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}${i===index?' (actual)':''}" aria-current="${i===index?'step':'false'}">${i+1}</button>`).join('');
     $('questionNav').querySelectorAll('button').forEach(b=>b.onclick=()=>{capture();state.index=Number(b.dataset.index);save();render()});
-    $('prevBtn').disabled=index===0; $('nextBtn').classList.toggle('hidden',index===total-1); $('finishBtn').classList.toggle('hidden',index!==total-1); $('questionArea').setAttribute('data-question-index',String(index)); window.scrollTo({top:0,behavior:'smooth'});
+    $('prevBtn').disabled=index===0; $('nextBtn').classList.toggle('hidden',index===total-1); $('finishBtn').classList.toggle('hidden',index!==total-1); $('questionArea').setAttribute('data-question-index',String(index));
+    // Reconciliación final: todos los indicadores se leen del mismo índice ya pintado.
+    const syncChrome=()=>{const painted=Number($('questionArea').getAttribute('data-question-index'));if(!Number.isInteger(painted))return;const n=painted+1;$('counter').textContent=`Pregunta ${n} de ${total}`;$('counter').setAttribute('aria-label',`Pregunta ${n} de ${total}`);$('progressBar').style.width=`${Math.round((n/total)*100)}%`;$('progressBar').setAttribute('aria-valuenow',String(n));$('questionNav').querySelectorAll('.dot').forEach((dot,i)=>{const active=i===painted;dot.classList.toggle('current',active);dot.setAttribute('aria-current',active?'step':'false');dot.setAttribute('aria-label',`Pregunta ${i+1}${active?' (actual)':''}`);});};
+    syncChrome();
+    window.scrollTo({top:0,behavior:'smooth'});
   }
   function graphHTML(q){
     const points=(q.graph.points||[]).map(([x,y])=>`<circle cx="${45+x*65}" cy="${260-y*30}" r="7" fill="#0b8f70" stroke="#fff" stroke-width="2"><title>x=${x}, y=${y}</title></circle>`).join('');
