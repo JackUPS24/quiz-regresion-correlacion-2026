@@ -16,9 +16,9 @@
       <div class="facts"><div class="fact"><strong>60:00</strong>tiempo máximo</div><div class="fact"><strong>20</strong>preguntas</div><div class="fact"><strong>100</strong>puntos</div><div class="fact"><strong>3</strong>intentos por código</div></div>
     </div>
     <form id="startForm" class="form-grid" novalidate>
-      <div><label for="studentName">Nombre completo</label><input id="studentName" autocomplete="name" maxlength="120" required placeholder="Nombres y apellidos"></div>
-      <div><label for="accessCode">Código individual</label><input id="accessCode" autocomplete="one-time-code" autocapitalize="characters" maxlength="24" required placeholder="R26-XXXX-XXXX-XXXX"></div>
-      <p class="notice small">El código se vincula al nombre usado en el primer intento. Usa el mismo nombre en los intentos posteriores.</p>
+      <div><label for="studentName">Nombre confirmado</label><input id="studentName" autocomplete="name" maxlength="120" readonly placeholder="Se mostrará al validar el carné"><p id="identityStatus" class="muted small" aria-live="polite">Valida tu carné para continuar.</p></div>
+      <div><label for="accessCode">Carné estudiantil</label><div class="inline-field"><input id="accessCode" autocomplete="one-time-code" autocapitalize="characters" maxlength="8" minlength="8" pattern="[0-9A-Fa-f]{8}" required placeholder="Ejemplo: 6BE37C86" title="Escribe los 8 caracteres de tu carné"><button id="validateCodeBtn" class="btn secondary" type="button">Validar</button></div></div>
+      <p class="notice small">Escribe los 8 caracteres de tu carné. El sistema mostrará automáticamente el nombre registrado antes de comenzar. La lista completa no está incluida en el sitio público.</p>
       <div id="configWarning" class="error hidden" role="alert">V02 aún no está conectada a Supabase. Consulta la guía de despliegue.</div>
       <div id="startError" class="error hidden" role="alert"></div>
       <div class="actions"><button id="startBtn" class="btn" type="submit">Comenzar intento</button><button id="resumeBtn" class="btn secondary hidden" type="button">Reanudar intento local</button></div>

@@ -32,11 +32,12 @@
   function rpc(name, body, accessToken = '') {
     return request(`/rest/v1/rpc/${name}`, { method: 'POST', body: JSON.stringify(body || {}) }, accessToken);
   }
+  function lookupStudent(code) { return rpc('lookup_student_by_code', { p_code: code }); }
   async function signIn(email, password) {
     return request('/auth/v1/token?grant_type=password', { method: 'POST', body: JSON.stringify({ email, password }) });
   }
   async function signOut(accessToken) {
     try { await request('/auth/v1/logout', { method: 'POST' }, accessToken); } catch (_) { /* session is cleared locally regardless */ }
   }
-  root.QuizApi = { configuration, rpc, signIn, signOut };
+  root.QuizApi = { configuration, rpc, lookupStudent, signIn, signOut };
 })(globalThis);

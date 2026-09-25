@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const C = globalThis.QuizCore, API = globalThis.QuizApi, $ = id => document.getElementById(id);
-  let state = null, timerHandle = null, submitting = false, retryHandle = null;
+  let state = null, timerHandle = null, submitting = false, retryHandle = null, confirmedCode = '', lookupHandle = null;
   const screens = ['startScreen','quizScreen','resultScreen'];
   function show(id) { screens.forEach(x => $(x).classList.toggle('hidden', x !== id)); }
   function message(id, text = '') { const el=$(id); el.textContent=text; el.classList.toggle('hidden', !text); }
@@ -9,6 +9,7 @@
     const raw = `${error?.code || ''} ${error?.message || ''}`;
     if (raw.includes('CONFIG_NOT_READY')) return 'La conexión aún no está configurada.';
     if (raw.includes('invalid_code')) return 'El código no existe o está desactivado.';
+    if (raw.includes('student_lookup_failed')) return 'No se pudo validar el código. Inténtalo nuevamente.';
     if (raw.includes('identity_mismatch')) return 'Este código está vinculado a otro nombre. Verifica la escritura exacta.';
     if (raw.includes('attempts_exhausted')) return 'Este código ya agotó sus tres intentos.';
     if (raw.includes('attempt_in_progress')) return 'Ya existe un intento activo para este código. Reanúdalo en el navegador donde comenzó.';
@@ -56,8 +57,7 @@
   async function begin(event) {
     event.preventDefault(); message('startError');
     const studentName=C.normalizeName($('studentName').value), code=C.normalizeCode($('accessCode').value);
-    if(studentName.length<5){message('startError','Escribe tu nombre completo.');return}
-    if(code.length<12){message('startError','Escribe un código individual válido.');return}
+    if(!confirmedCode || confirmedCode !== code || studentName.length<5){message('startError','Valida primero un código activo y confirma el nombre mostrado.');return}
     $('startBtn').disabled=true;
     try{
       const response=await API.rpc('begin_quiz_attempt',{p_code:code,p_student_name:studentName});
@@ -93,7 +93,18 @@
   $('nextBtn').onclick=()=>{capture();if(state.index<state.questions.length-1){state.index++;save();render()}};
   $('finishBtn').onclick=()=>{capture();const missing=state.questions.filter(q=>!C.isAnswered(state.responses[q.id])).length;if(!missing||confirm(`Hay ${missing} pregunta(s) sin responder. ¿Finalizar y enviar?`))lockAndSubmit()};
   $('newAttemptBtn').onclick=()=>{C.clearDraft(localStorage);state=null;location.reload()};
-  $('accessCode').addEventListener('input',e=>{const pos=e.target.selectionStart;e.target.value=C.normalizeCode(e.target.value);try{e.target.setSelectionRange(pos,pos)}catch(_){}});
+  async function validateCode(){
+    const input=$('accessCode'), code=C.normalizeCode(input.value); input.value=code;
+    confirmedCode=''; $('studentName').value=''; $('startBtn').disabled=true;
+    if(code.length<8){$('identityStatus').textContent='Escribe un código completo para validarlo.';return}
+    $('identityStatus').textContent='Validando código...'; message('startError');
+    try { const result=await API.lookupStudent(code); const name=C.normalizeName(result?.student_name); if(!name) throw new Error('invalid_code'); $('studentName').value=name; confirmedCode=code; $('identityStatus').textContent='Nombre confirmado. Ya puedes comenzar.'; }
+    catch(error){$('identityStatus').textContent='Código inválido, inactivo o no disponible.'; message('startError',errorText(error));}
+    finally{$('startBtn').disabled=!confirmedCode;}
+  }
+  $('validateCodeBtn').onclick=validateCode;
+  $('accessCode').addEventListener('input',e=>{const pos=e.target.selectionStart;e.target.value=C.normalizeCode(e.target.value);confirmedCode='';$('studentName').value='';$('startBtn').disabled=true;$('identityStatus').textContent='Valida el código para mostrar el nombre.';try{e.target.setSelectionRange(pos,pos)}catch(_){}});
+  $('accessCode').addEventListener('blur',()=>{clearTimeout(lookupHandle);lookupHandle=setTimeout(validateCode,0)});
   addEventListener('online',()=>{if(state?.submitPending)lockAndSubmit()});
   const draft=C.loadDraft(localStorage); $('resumeBtn').classList.toggle('hidden',!draft||draft.finished);
   $('configWarning').classList.toggle('hidden',API.configuration().ready);
