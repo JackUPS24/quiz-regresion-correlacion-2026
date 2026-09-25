@@ -13,7 +13,7 @@
     if (raw.includes('identity_mismatch')) return 'Este código está vinculado a otro nombre. Verifica la escritura exacta.';
     if (raw.includes('attempts_exhausted')) return 'Este código ya agotó sus tres intentos.';
     if (raw.includes('attempt_in_progress')) return 'Ya existe un intento activo. Usa el código individual para reanudarlo en otro navegador.';
-    if (raw.includes('invalid_resume_code')) return 'El código individual no coincide o el intento ya no está activo.';
+    if (raw.includes('invalid_resume_code')) return 'El código de reanudación no coincide o el intento ya no está activo.';
     if (raw.includes('Failed to fetch')) return 'No se pudo conectar. Revisa internet e inténtalo de nuevo.';
     return error?.message || 'Ocurrió un error inesperado.';
   }
