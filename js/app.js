@@ -33,15 +33,22 @@
     return `<fieldset class="options"><legend class="sr-only">${multiple?'Selecciona todas las correctas':'Selecciona una opción'}</legend>${q.options.map((option,index)=>{const checked=multiple?(current||[]).includes(index):current===index;return `<label class="option"><input name="answer" type="${multiple?'checkbox':'radio'}" value="${index}" ${checked?'checked':''}><span>${escapeHtml(option)}</span></label>`}).join('')}</fieldset>`;
   }
   function render() {
-    const q=state.questions[state.index], total=state.questions.length;
-    $('counter').textContent=`Pregunta ${state.index+1} de ${total}`; $('progressBar').style.width=`${Math.round((state.index/total)*100)}%`;
+    const total=state.questions.length;
+    const index=Math.max(0,Math.min(Number(state.index)||0,total-1));
+    state.index=index;
+    const q=state.questions[index];
+    const questionNumber=index+1;
+    $('counter').textContent=`Pregunta ${questionNumber} de ${total}`;
+    $('counter').setAttribute('aria-label',`Pregunta ${questionNumber} de ${total}`);
+    $('progressBar').style.width=`${Math.round((questionNumber/total)*100)}%`;
+    $('progressBar').setAttribute('aria-valuenow',String(questionNumber));
     const graphQuestion = q.graph || (/diagrama|dispersión|dispersion/i.test(q.stem || '') ? {points:[[1,2],[2,3],[3,3],[4,5],[5,6],[6,7]],defaultSlope:0.9,defaultIntercept:1} : null);
-    $('questionArea').innerHTML=`<div class="meta"><span class="pill">${escapeHtml(q.topic)}</span><span class="pill">${escapeHtml(q.type_label || q.type)}</span><span class="pill">5 puntos</span></div><p class="stem">${escapeHtml(q.stem)}</p>${graphQuestion ? graphHTML(graphQuestion) : ''}${answerInput(q)}`;
+    $('questionArea').innerHTML=`<div class="question-heading"><div><p class="question-kicker">Pregunta ${questionNumber} de ${total}</p><h2 class="question-title">${escapeHtml(q.stem)}</h2></div><span class="question-points">5 pts</span></div><div class="meta"><span class="pill">${escapeHtml(q.topic)}</span><span class="pill">${escapeHtml(q.type_label || q.type)}</span></div>${graphQuestion ? graphHTML(graphQuestion) : ''}${answerInput(q)}`;
     if (graphQuestion) bindGraph(graphQuestion);
     $('questionArea').querySelectorAll('input').forEach(el=>el.addEventListener('input', capture));
-    $('questionNav').innerHTML=state.questions.map((item,i)=>`<button class="dot ${i===state.index?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}">${i+1}</button>`).join('');
+    $('questionNav').innerHTML=state.questions.map((item,i)=>`<button type="button" class="dot ${i===index?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}${i===index?' (actual)':''}" aria-current="${i===index?'step':'false'}">${i+1}</button>`).join('');
     $('questionNav').querySelectorAll('button').forEach(b=>b.onclick=()=>{capture();state.index=Number(b.dataset.index);save();render()});
-    $('prevBtn').disabled=state.index===0; $('nextBtn').classList.toggle('hidden',state.index===total-1); $('finishBtn').classList.toggle('hidden',state.index!==total-1); window.scrollTo({top:0,behavior:'smooth'});
+    $('prevBtn').disabled=index===0; $('nextBtn').classList.toggle('hidden',index===total-1); $('finishBtn').classList.toggle('hidden',index!==total-1); $('questionArea').setAttribute('data-question-index',String(index)); window.scrollTo({top:0,behavior:'smooth'});
   }
   function graphHTML(q){
     const points=(q.graph.points||[]).map(([x,y])=>`<circle cx="${45+x*65}" cy="${260-y*30}" r="7" fill="#0b8f70" stroke="#fff" stroke-width="2"><title>x=${x}, y=${y}</title></circle>`).join('');
