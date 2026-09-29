@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) module.exports = api; else root.QuizCore = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
-  const STORE_KEY = 'quiz_fundamentos_estadistica_v04_active';
+  const STORE_KEY = 'quiz_pensamiento_logico_v05_active';
   function normalizeName(value) { return String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' '); }
   function normalizeCode(value) { return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^(.{3})(.{4})(.{4})(.{0,4}).*$/, (_, a, b, c, d) => [a,b,c,d].filter(Boolean).join('-')); }
   function remainingSeconds(deadlineIso, nowMs = Date.now()) { return Math.max(0, Math.ceil((new Date(deadlineIso).getTime() - nowMs) / 1000)); }
