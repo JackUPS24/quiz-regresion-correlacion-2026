@@ -55,5 +55,8 @@ button,.btn,input{min-height:48px}.btn{display:inline-flex;align-items:center;ju
 .evidence-teacher-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin:12px 0 20px}
 .evidence-teacher-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;text-align:center;padding:6px;box-shadow:0 2px 8px #182c4b0a}
 .evidence-teacher-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block;margin-bottom:6px;cursor:pointer}
+.evidence-dot{background:#eff6ff;color:#1e3a8a;font-size:1.05rem;border:2px dashed #3b82f6}
+.evidence-prompt-callout{background:#eff6ff;border:1.5px solid #3b82f6;border-radius:14px;padding:16px;margin:20px 0 10px;display:flex;flex-direction:column;gap:8px}
+.evidence-prompt-title{font-weight:800;color:#1e40af;font-size:1rem}
 @media(max-width:760px){.evidence-upload-controls{flex-direction:column}.upload-trigger-btn{width:100%;min-width:0}.evidence-grid{grid-template-columns:1fr}.evidence-card{max-width:100%}}
 

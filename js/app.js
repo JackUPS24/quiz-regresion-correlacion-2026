@@ -177,7 +177,8 @@
     });
     $('questionNav').innerHTML = state.questions.map((item, i) =>
       `<button type="button" class="dot ${C.isAnswered(state.responses[item.id]) ? 'done' : ''}" data-index="${i}" aria-label="Pregunta ${i + 1}" aria-current="false">${i + 1}</button>`
-    ).join('');
+    ).join('') +
+      `<button type="button" class="dot evidence-dot current ${(state.evidencePhotos||[]).length>0?'done':''}" data-index="evidence" aria-label="Paso 21: Evidencias fotográficas (actual)" aria-current="step" title="Paso 21: Evidencias fotográficas (Obligatorio)">📷</button>`;
     $('prevBtn').disabled = false;
     $('prevBtn').textContent = '← Volver a pregunta 20';
     $('nextBtn').classList.add('hidden');
@@ -203,10 +204,22 @@
     $('quizProgress').setAttribute('aria-valuenow',String(questionNumber));
     $('quizProgress').setAttribute('aria-valuetext',`${questionNumber} de ${total}`);
     const graphQuestion = q.graph || (/diagrama|dispersión|dispersion/i.test(q.stem || '') ? {points:[[1,2],[2,3],[3,3],[4,5],[5,6],[6,7]],defaultSlope:0.9,defaultIntercept:1} : null);
-    $('questionArea').innerHTML=`<div class="question-heading"><div><p class="question-kicker">Pregunta ${questionNumber} de ${total}</p><h2 class="question-title">${escapeHtml(q.stem)}</h2></div><span class="question-points">5 pts</span></div><div class="meta"><span class="pill">${escapeHtml(q.topic)}</span><span class="pill">${escapeHtml(q.type_label || q.type)}</span></div>${graphQuestion ? graphHTML(graphQuestion) : ''}${answerInput(q)}`;
+    const calloutHtml = (index === total - 1) ? `
+      <div class="evidence-prompt-callout">
+        <div class="evidence-prompt-title">📷 Paso siguiente obligatorio: Fotografías de tablas de verdad manuscritas</div>
+        <p class="muted small">Al terminar de contestar esta pregunta 20, presiona el botón para adjuntar las fotografías de tus hojas de trabajo manuscritas con las formalizaciones y tablas de verdad de 8 filas.</p>
+        <button type="button" id="calloutGoEvidenceBtn" class="btn upload-trigger-btn">Subir evidencias fotográficas manuscritas 📷 →</button>
+      </div>
+    ` : '';
+    $('questionArea').innerHTML=`<div class="question-heading"><div><p class="question-kicker">Pregunta ${questionNumber} de ${total}</p><h2 class="question-title">${escapeHtml(q.stem)}</h2></div><span class="question-points">5 pts</span></div><div class="meta"><span class="pill">${escapeHtml(q.topic)}</span><span class="pill">${escapeHtml(q.type_label || q.type)}</span></div>${graphQuestion ? graphHTML(graphQuestion) : ''}${answerInput(q)}${calloutHtml}`;
     if (graphQuestion) bindGraph(graphQuestion);
+    if (index === total - 1) {
+      $('calloutGoEvidenceBtn')?.addEventListener('click', () => { capture(true); state.viewingEvidence = true; save(); render(); });
+    }
     $('questionArea').querySelectorAll('input').forEach(el=>el.addEventListener('input', capture));
-    $('questionNav').innerHTML=state.questions.map((item,i)=>`<button type="button" class="dot ${i===index?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}${i===index?' (actual)':''}" aria-current="${i===index?'step':'false'}">${i+1}</button>`).join('');
+    const dotsHtml = state.questions.map((item,i)=>`<button type="button" class="dot ${i===index&&!state.viewingEvidence?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}${i===index?' (actual)':''}" aria-current="${i===index?'step':'false'}">${i+1}</button>`).join('') +
+      `<button type="button" class="dot evidence-dot ${state.viewingEvidence?'current':''} ${(state.evidencePhotos||[]).length>0?'done':''}" data-index="evidence" aria-label="Paso 21: Evidencias fotográficas" title="Paso 21: Evidencias fotográficas (Obligatorio)">📷</button>`;
+    $('questionNav').innerHTML = dotsHtml;
     $('prevBtn').disabled=index===0;
     $('prevBtn').textContent='Anterior';
     if (index === total - 1) {
@@ -271,7 +284,16 @@
   function showResult(result) { show('resultScreen');const topics=result.topic_breakdown||[];$('resultArea').innerHTML=`<p class="muted">${escapeHtml(result.student_name||state.studentName)} · intento ${result.attempt_no||state.attemptNo}</p><div class="score">${Number(result.score).toFixed(0)}/100</div><p><span class="status ${escapeHtml(result.status)}">${result.status==='timed_out'?'Finalizado por tiempo':'Envío completo'}</span> · ${result.correct_count}/${result.question_count} correctas · duración ${Math.floor(result.duration_seconds/60)} min ${result.duration_seconds%60} s</p><p>Código de verificación: <strong>${escapeHtml(result.verification_code)}</strong></p><h3>Desglose por tema</h3>${topics.map(t=>`<div class="topic"><span>${escapeHtml(t.topic)}</span><div class="bar"><span style="width:${t.total?Math.round(t.correct/t.total*100):0}%"></span></div><strong>${t.correct}/${t.total}</strong></div>`).join('')}<p class="success">El registro central fue confirmado. El panel docente puede verificarlo con el código mostrado.</p>`; }
   function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
   $('startForm').addEventListener('submit',begin);$('resumeBtn').onclick=resume;$('resumeRemoteBtn').onclick=resumeRemote;
-  $('questionNav').addEventListener('click',event=>{const button=event.target.closest('button[data-index]');if(button&&$('questionNav').contains(button)){state.viewingEvidence=false;navigateTo(Number(button.dataset.index));}});
+  $('questionNav').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-index]');
+    if(button&&$('questionNav').contains(button)){
+      if(button.dataset.index==='evidence'){
+        capture(true);state.viewingEvidence=true;save();render();
+      }else{
+        state.viewingEvidence=false;navigateTo(Number(button.dataset.index));
+      }
+    }
+  });
   $('evidenceNavBtn')?.addEventListener('click',()=>{if(!state||state.finished)return;capture(true);state.viewingEvidence=true;save();render();});
   $('closePhotoModal')?.addEventListener('click',()=>$('photoModal')?.close());
   $('prevBtn').onclick=()=>{if(!state||state.finished)return;if(state.viewingEvidence){state.viewingEvidence=false;state.index=state.questions.length-1;save();render();return;}navigateTo((state?.index??0)-1);};
