@@ -177,8 +177,7 @@
     });
     $('questionNav').innerHTML = state.questions.map((item, i) =>
       `<button type="button" class="dot ${C.isAnswered(state.responses[item.id]) ? 'done' : ''}" data-index="${i}" aria-label="Pregunta ${i + 1}" aria-current="false">${i + 1}</button>`
-    ).join('') +
-      `<button type="button" class="dot evidence-dot current ${(state.evidencePhotos||[]).length>0?'done':''}" data-index="evidence" aria-label="Paso 21: Evidencias fotográficas (actual)" aria-current="step" title="Paso 21: Evidencias fotográficas (Obligatorio)">📷</button>`;
+    ).join('');
     $('prevBtn').disabled = false;
     $('prevBtn').textContent = '← Volver a pregunta 20';
     $('nextBtn').classList.add('hidden');
@@ -217,8 +216,7 @@
       $('calloutGoEvidenceBtn')?.addEventListener('click', () => { capture(true); state.viewingEvidence = true; save(); render(); });
     }
     $('questionArea').querySelectorAll('input').forEach(el=>el.addEventListener('input', capture));
-    const dotsHtml = state.questions.map((item,i)=>`<button type="button" class="dot ${i===index&&!state.viewingEvidence?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}${i===index?' (actual)':''}" aria-current="${i===index?'step':'false'}">${i+1}</button>`).join('') +
-      `<button type="button" class="dot evidence-dot ${state.viewingEvidence?'current':''} ${(state.evidencePhotos||[]).length>0?'done':''}" data-index="evidence" aria-label="Paso 21: Evidencias fotográficas" title="Paso 21: Evidencias fotográficas (Obligatorio)">📷</button>`;
+    const dotsHtml = state.questions.map((item,i)=>`<button type="button" class="dot ${i===index&&!state.viewingEvidence?'current':''} ${C.isAnswered(state.responses[item.id])?'done':''}" data-index="${i}" aria-label="Pregunta ${i+1}${i===index?' (actual)':''}" aria-current="${i===index?'step':'false'}">${i+1}</button>`).join('');
     $('questionNav').innerHTML = dotsHtml;
     $('prevBtn').disabled=index===0;
     $('prevBtn').textContent='Anterior';
