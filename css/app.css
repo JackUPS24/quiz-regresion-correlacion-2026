@@ -24,3 +24,36 @@ button,.btn,input{min-height:48px}.btn{display:inline-flex;align-items:center;ju
 @media(hover:hover){.option:hover{border-color:#9db9e9;background:#f3f7ff}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 @media print{.resume-notice{display:none!important}}
+/* Evidencias fotográficas manuscritas obligatorias */
+.evidence-nav-wrap{display:flex;justify-content:center;margin:6px 0 18px;width:100%}
+.evidence-nav-btn{width:100%;max-width:520px;min-height:48px;justify-content:center;border:2px solid #a8c7f7;background:#f0f6ff;color:#16488f;font-weight:850;transition:all .15s ease}
+.evidence-nav-btn:hover{background:#e3eeff;border-color:var(--blue)}
+.evidence-nav-btn.current{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 0 0 4px #dce9ff,0 5px 12px #2368dc33}
+.evidence-nav-btn.done{border-color:#7fd6be;background:#e9fbf4;color:#076247}
+.badge-req{background:#fff0ee;color:#b42318;padding:3px 7px;border-radius:6px;font-size:.76rem;letter-spacing:.05em;text-transform:uppercase;margin-left:6px;display:inline-block}
+.badge-mandatory{flex:none;background:#fff0ee;color:#b42318;border:1px solid #ffd3cf;border-radius:999px;padding:8px 12px;font-weight:850;font-size:.82rem;white-space:nowrap}
+.evidence-instructions{margin:8px 0 16px;line-height:1.45;color:#334259;font-size:.95rem}
+.evidence-upload-controls{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0 14px}
+.upload-trigger-btn{flex:1;min-width:210px;min-height:50px;font-size:.96rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;touch-action:manipulation}
+.evidence-section-subtitle{margin:22px 0 12px;font-size:1.15rem;font-weight:850;color:#17223a}
+.evidence-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin:14px 0}
+.evidence-card{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 14px #182c4b0d;display:flex;flex-direction:column}
+.evidence-thumb-wrap{position:relative;width:100%;aspect-ratio:4/3;background:#e9eff7;overflow:hidden;cursor:pointer;display:grid;place-items:center}
+.evidence-thumb{width:100%;height:100%;object-fit:cover;transition:transform .2s ease;display:block}
+.evidence-thumb-wrap:hover .evidence-thumb{transform:scale(1.05)}
+.evidence-zoom-hint{position:absolute;bottom:8px;right:8px;background:#12233fcc;color:#fff;padding:4px 8px;border-radius:6px;font-size:.75rem;font-weight:750;backdrop-filter:blur(4px);pointer-events:none}
+.evidence-meta{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid #edf2f7;background:#fafcff}
+.evidence-actions{display:flex;gap:8px;padding:10px;margin-top:auto}
+.evidence-actions .btn{flex:1;min-height:44px;padding:8px 10px;font-size:.84rem}
+.evidence-empty-box{border:2px dashed #b8c9e0;border-radius:16px;padding:34px 18px;text-align:center;background:#f8fbff;margin:16px 0}
+.evidence-empty-icon{font-size:2.8rem;line-height:1;margin-bottom:10px}
+.photo-modal{max-width:min(900px,calc(100vw - 20px));width:100%;padding:0;border:0;border-radius:18px;box-shadow:0 25px 90px #0008;background:#fff;overflow:hidden}
+.photo-modal-header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid #e2e8f0;background:#f8fafc}
+.photo-modal-header h3{margin:0;font-size:1.05rem;font-weight:800;color:var(--navy)}
+.photo-modal-body{padding:12px;text-align:center;max-height:80vh;overflow:auto;background:#0d1524;display:grid;place-items:center}
+.photo-modal-body img{max-width:100%;max-height:76vh;height:auto;border-radius:8px;box-shadow:0 8px 30px #0009;object-fit:contain}
+.evidence-teacher-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin:12px 0 20px}
+.evidence-teacher-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;text-align:center;padding:6px;box-shadow:0 2px 8px #182c4b0a}
+.evidence-teacher-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block;margin-bottom:6px;cursor:pointer}
+@media(max-width:760px){.evidence-upload-controls{flex-direction:column}.upload-trigger-btn{width:100%;min-width:0}.evidence-grid{grid-template-columns:1fr}.evidence-card{max-width:100%}}
+
